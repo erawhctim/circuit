@@ -26,6 +26,7 @@ dependencies {
   implementation(libs.androidx.browser)
   implementation(libs.bundles.compose.ui)
   implementation(libs.androidx.compose.ui.util)
+  implementation(libs.androidx.compose.ui.viewBinding)
   implementation(libs.androidx.compose.integration.materialThemeAdapter)
   implementation(libs.androidx.compose.material.icons)
   implementation(libs.androidx.compose.material.iconsExtended)
