@@ -38,6 +38,7 @@ constructor(
     binding = CounterViewBinding.inflate(LayoutInflater.from(context), this, true)
     binding.increment.setOnClickListener { onIncrementClickListener?.onClick(it) }
     binding.decrement.setOnClickListener { onDecrementClickListener?.onClick(it) }
+    binding.uiImplLabel.text = "(UI: CounterView)"
   }
 
   @SuppressLint("SetTextI18n")

@@ -35,4 +35,17 @@
         android:textSize="48sp"
         android:text="-"/>
 
+    <Space
+        android:layout_width="match_parent"
+        android:layout_height="32dp" />
+
+    <TextView
+        android:id="@+id/ui_impl_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:textSize="16sp"
+        android:textStyle="italic"
+        tools:text="(UI: Android View)" />
+
 </LinearLayout>
