@@ -261,7 +261,13 @@ enum class UiSource : Displayable {
 
     override val presentationName
       get() = "View -> Circuit"
-  };
+  },
+  Fragment {
+    override fun createUi(): Ui<CounterScreen.State> {
+      return ui { state, modifier -> CounterFragmentComposable(state, modifier) }
+    }
+  }
+  ;
 
   abstract fun createUi(): Ui<CounterScreen.State>
   open override val index: Int
