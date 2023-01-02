@@ -14,30 +14,20 @@ import androidx.browser.customtabs.CustomTabsIntent.COLOR_SCHEME_LIGHT
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.remember
 import androidx.lifecycle.ViewModelProvider
 import com.slack.circuit.CircuitCompositionLocals
 import com.slack.circuit.CircuitConfig
-import com.slack.circuit.NavigableCircuitContent
-import com.slack.circuit.Screen
-import com.slack.circuit.backstack.rememberSaveableBackStack
+import com.slack.circuit.CircuitContent
 import com.slack.circuit.overlay.ContentWithOverlays
-import com.slack.circuit.push
-import com.slack.circuit.rememberCircuitNavigator
 import com.slack.circuit.retained.LocalRetainedStateRegistry
 import com.slack.circuit.retained.continuityRetainedStateRegistry
 import com.slack.circuit.star.di.ActivityKey
 import com.slack.circuit.star.di.AppScope
 import com.slack.circuit.star.home.HomeScreen
 import com.slack.circuit.star.navigator.AndroidScreen
-import com.slack.circuit.star.navigator.AndroidSupportingNavigator
-import com.slack.circuit.star.petdetail.PetDetailScreen
 import com.slack.circuit.star.ui.StarTheme
 import com.squareup.anvil.annotations.ContributesMultibinding
 import javax.inject.Inject
-import kotlinx.collections.immutable.ImmutableList
-import kotlinx.collections.immutable.persistentListOf
-import okhttp3.HttpUrl.Companion.toHttpUrl
 
 @ContributesMultibinding(AppScope::class, boundType = Activity::class)
 @ActivityKey(MainActivity::class)
@@ -50,7 +40,6 @@ constructor(
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
-    var backStack: ImmutableList<Screen> = persistentListOf(HomeScreen)
 
     /*
      * Temporarily disabling deeplink support, as it's not entirely relevant to this
@@ -67,16 +56,12 @@ constructor(
       StarTheme {
         // TODO why isn't the windowBackground enough so we don't need to do this?
         Surface(color = MaterialTheme.colorScheme.background) {
-          val backstack = rememberSaveableBackStack { backStack.forEach { screen -> push(screen) } }
-          val circuitNavigator = rememberCircuitNavigator(backstack)
-          val navigator =
-            remember(circuitNavigator) { AndroidSupportingNavigator(circuitNavigator, this::goTo) }
           CircuitCompositionLocals(circuitConfig) {
             ContentWithOverlays {
               CompositionLocalProvider(
                 LocalRetainedStateRegistry provides continuityRetainedStateRegistry(),
               ) {
-                NavigableCircuitContent(navigator, backstack)
+                CircuitContent(HomeScreen,  circuitConfig)
               }
             }
           }
@@ -87,21 +72,5 @@ constructor(
 
   override fun getDefaultViewModelProviderFactory(): ViewModelProvider.Factory {
     return viewModelProviderFactory
-  }
-
-  private fun goTo(screen: AndroidScreen) =
-    when (screen) {
-      is AndroidScreen.CustomTabsIntentScreen -> goTo(screen)
-      is AndroidScreen.IntentScreen -> TODO()
-    }
-
-  private fun goTo(screen: AndroidScreen.CustomTabsIntentScreen) {
-    val scheme = CustomTabColorSchemeParams.Builder().setToolbarColor(0x000000).build()
-    CustomTabsIntent.Builder()
-      .setColorSchemeParams(COLOR_SCHEME_LIGHT, scheme)
-      .setColorSchemeParams(COLOR_SCHEME_DARK, scheme)
-      .setShowTitle(true)
-      .build()
-      .launchUrl(this, Uri.parse(screen.url))
   }
 }

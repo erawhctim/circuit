@@ -2,6 +2,10 @@
 // SPDX-License-Identifier: Apache-2.0
 package com.slack.circuit.star.home
 
+import android.content.Context
+import android.net.Uri
+import androidx.browser.customtabs.CustomTabColorSchemeParams
+import androidx.browser.customtabs.CustomTabsIntent
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -14,19 +18,26 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
-import com.slack.circuit.CircuitContent
 import com.slack.circuit.CircuitUiEvent
 import com.slack.circuit.CircuitUiState
 import com.slack.circuit.NavEvent
+import com.slack.circuit.NavigableCircuitContent
 import com.slack.circuit.Navigator
 import com.slack.circuit.Screen
+import com.slack.circuit.backstack.rememberSaveableBackStack
 import com.slack.circuit.codegen.annotations.CircuitInject
 import com.slack.circuit.onNavEvent
+import com.slack.circuit.push
+import com.slack.circuit.rememberCircuitNavigator
 import com.slack.circuit.star.di.AppScope
 import com.slack.circuit.star.home.HomeScreen.Event.ChildNav
 import com.slack.circuit.star.home.HomeScreen.Event.HomeEvent
+import com.slack.circuit.star.navigator.AndroidScreen
+import com.slack.circuit.star.navigator.AndroidSupportingNavigator
 import com.slack.circuit.star.ui.StarTheme
 import kotlinx.parcelize.Parcelize
 
@@ -75,7 +86,17 @@ fun HomeContent(state: HomeScreen.State, modifier: Modifier = Modifier) {
   ) { paddingValues ->
     Box(modifier = Modifier.padding(paddingValues)) {
       val screen = state.homeNavState.bottomNavItems[state.homeNavState.index].screen
-      CircuitContent(screen, { event -> eventSink(ChildNav(event)) })
+      val context = LocalContext.current
+
+      val backstack = rememberSaveableBackStack { push(screen) }
+      val circuitNavigator = rememberCircuitNavigator(backstack)
+      val navigator = remember(circuitNavigator) {
+        AndroidSupportingNavigator(circuitNavigator) { androidScreen ->
+          goTo(context, androidScreen)
+        }
+      }
+
+      NavigableCircuitContent(navigator, backstack)
     }
   }
 }
@@ -97,4 +118,20 @@ private fun BottomNavigationBar(selectedIndex: Int, onSelectedIndex: (Int) -> Un
       )
     }
   }
+}
+
+private fun goTo(context: Context, screen: AndroidScreen) =
+  when (screen) {
+    is AndroidScreen.CustomTabsIntentScreen -> goTo(context, screen)
+    is AndroidScreen.IntentScreen -> TODO()
+  }
+
+private fun goTo(context: Context, screen: AndroidScreen.CustomTabsIntentScreen) {
+  val scheme = CustomTabColorSchemeParams.Builder().setToolbarColor(0x000000).build()
+  CustomTabsIntent.Builder()
+    .setColorSchemeParams(CustomTabsIntent.COLOR_SCHEME_LIGHT, scheme)
+    .setColorSchemeParams(CustomTabsIntent.COLOR_SCHEME_DARK, scheme)
+    .setShowTitle(true)
+    .build()
+    .launchUrl(context, Uri.parse(screen.url))
 }
