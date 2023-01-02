@@ -51,12 +51,17 @@ constructor(
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     var backStack: ImmutableList<Screen> = persistentListOf(HomeScreen)
-    if (intent.data != null) {
-      val httpUrl = intent.data.toString().toHttpUrl()
-      val animalId = httpUrl.pathSegments[1].substringAfterLast("-").toLong()
-      val petDetailScreen = PetDetailScreen(animalId, null)
-      backStack = persistentListOf(HomeScreen, petDetailScreen)
-    }
+
+    /*
+     * Temporarily disabling deeplink support, as it's not entirely relevant to this
+     * example branch demonstrating multiple backstacks.
+     */
+//    if (intent.data != null) {
+//      val httpUrl = intent.data.toString().toHttpUrl()
+//      val animalId = httpUrl.pathSegments[1].substringAfterLast("-").toLong()
+//      val petDetailScreen = PetDetailScreen(animalId, null)
+//      backStack = persistentListOf(HomeScreen, petDetailScreen)
+//    }
 
     setContent {
       StarTheme {
