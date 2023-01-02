@@ -18,6 +18,7 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -39,6 +40,7 @@ import com.slack.circuit.star.home.HomeScreen.Event.HomeEvent
 import com.slack.circuit.star.navigator.AndroidScreen
 import com.slack.circuit.star.navigator.AndroidSupportingNavigator
 import com.slack.circuit.star.ui.StarTheme
+import kotlinx.collections.immutable.toPersistentList
 import kotlinx.parcelize.Parcelize
 
 @Parcelize
@@ -73,23 +75,25 @@ fun HomeContent(state: HomeScreen.State, modifier: Modifier = Modifier) {
   systemUiController.setStatusBarColor(MaterialTheme.colorScheme.background)
   systemUiController.setNavigationBarColor(MaterialTheme.colorScheme.primaryContainer)
 
+  val navItems = HomeNavScreen.HOME_NAV_ITEMS
+  val backstacks = navItems.map { rememberSaveableBackStack { push(it.screen) } }.toPersistentList()
+
   val eventSink = state.eventSink
   Scaffold(
     modifier = modifier.navigationBarsPadding().systemBarsPadding().fillMaxWidth(),
     bottomBar = {
       StarTheme(useDarkTheme = true) {
-        BottomNavigationBar(selectedIndex = state.homeNavState.index) { index ->
+        BottomNavigationBar(navItems, selectedIndex = state.homeNavState.index) { index ->
           eventSink(HomeEvent(HomeNavScreen.Event.ClickNavItem(index)))
         }
       }
     }
   ) { paddingValues ->
     Box(modifier = Modifier.padding(paddingValues)) {
-      val screen = state.homeNavState.bottomNavItems[state.homeNavState.index].screen
       val context = LocalContext.current
+      val backstack = backstacks[state.homeNavState.index]
 
-      val backstack = rememberSaveableBackStack { push(screen) }
-      val circuitNavigator = rememberCircuitNavigator(backstack)
+      val circuitNavigator = key (state.homeNavState.index) { rememberCircuitNavigator(backstack) }
       val navigator = remember(circuitNavigator) {
         AndroidSupportingNavigator(circuitNavigator) { androidScreen ->
           goTo(context, androidScreen)
@@ -102,9 +106,11 @@ fun HomeContent(state: HomeScreen.State, modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun BottomNavigationBar(selectedIndex: Int, onSelectedIndex: (Int) -> Unit) {
-  // These are the buttons on the NavBar, they dictate where we navigate too.
-  val items = listOf(BottomNavItem.Adoptables, BottomNavItem.About)
+private fun BottomNavigationBar(
+  items: List<BottomNavItem>,
+  selectedIndex: Int,
+  onSelectedIndex: (Int) -> Unit
+) {
   NavigationBar(
     containerColor = MaterialTheme.colorScheme.primaryContainer,
   ) {
