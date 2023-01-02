@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -18,27 +19,60 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.slack.circuit.CircuitUiEvent
 import com.slack.circuit.CircuitUiState
+import com.slack.circuit.Navigator
+import com.slack.circuit.Presenter
 import com.slack.circuit.Screen
 import com.slack.circuit.codegen.annotations.CircuitInject
 import com.slack.circuit.star.R
 import com.slack.circuit.star.di.AppScope
+import com.slack.circuit.star.home.AboutScreen.Event.GoToScreen
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
 import kotlinx.parcelize.Parcelize
 
 @Parcelize
 object AboutScreen : Screen {
-  object State : CircuitUiState
+  data class State(
+    val eventSink: (Event) -> Unit,
+  ) : CircuitUiState
+
+  sealed interface Event : CircuitUiEvent {
+    class GoToScreen(val screen: Screen) : Event
+  }
+}
+
+
+class AboutPresenter
+@AssistedInject constructor(
+  @Assisted val navigator: Navigator,
+): Presenter<AboutScreen.State> {
+  @Composable
+  override fun present(): AboutScreen.State {
+    return AboutScreen.State { event ->
+      when (event) {
+        is GoToScreen -> navigator.goTo(event.screen)
+      }
+    }
+  }
+
+  @CircuitInject(AboutScreen::class, AppScope::class)
+  @AssistedFactory
+  interface Factory {
+    fun create(navigator: Navigator): AboutPresenter
+  }
 }
 
 @CircuitInject(screen = AboutScreen::class, scope = AppScope::class)
 @Composable
-fun AboutPresenter(): AboutScreen.State = AboutScreen.State
-
-@CircuitInject(screen = AboutScreen::class, scope = AppScope::class)
-@Composable
-fun About(modifier: Modifier = Modifier) {
+fun About(state: AboutScreen.State, modifier: Modifier = Modifier) {
+  val eventSink = state.eventSink
   Scaffold(
     modifier = modifier.fillMaxSize().padding(16.dp),
     content = { padding ->
@@ -53,6 +87,12 @@ fun About(modifier: Modifier = Modifier) {
           contentDescription = "STAR icon",
           tint = Color.Unspecified
         )
+        Spacer(modifier = Modifier.height(16.dp))
+        Button(
+          onClick = { eventSink(GoToScreen(AboutScreen)) }
+        ) {
+          Text("add Screen to backstack")
+        }
         Spacer(modifier = Modifier.height(16.dp))
         Text(text = stringResource(id = R.string.about_screen), textAlign = TextAlign.Justify)
       }
